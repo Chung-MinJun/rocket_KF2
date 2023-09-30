@@ -19,7 +19,7 @@ References:
 
 //Header files
 #include "MPU6050.h"
-
+#define gravity_const 9.81
 //Library Variable
 //1- I2C Handle
 static I2C_HandleTypeDef i2cHandler;
@@ -208,9 +208,9 @@ void MPU6050_Get_Accel_Scale(ScaledData_Def *scaledDef)
 	MPU6050_Get_Accel_RawData(&AccelRData);
 
 	//Accel Scale data
-	scaledDef->x = (AccelRData.x*accelScalingFactor)*9.81f;
-	scaledDef->y = (AccelRData.y*accelScalingFactor)*9.81f;
-	scaledDef->z = (AccelRData.z*accelScalingFactor)*9.81f;
+	scaledDef->x = (AccelRData.x*accelScalingFactor)*gravity_const;
+	scaledDef->y = (AccelRData.y*accelScalingFactor)*gravity_const;
+	scaledDef->z = (AccelRData.z*accelScalingFactor)*gravity_const;
 }
 
 //11- Get Accel calibrated data

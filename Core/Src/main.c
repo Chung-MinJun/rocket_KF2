@@ -131,16 +131,16 @@ RawData_Def myAccelRaw, myGyroRaw;
 ScaledData_Def myAccelScaled, myGyroScaled;
 float desiredAngle = 45.0;
 float gyroAngle = 0.0;
-float dt = 0.001;
+float dt = 0.00078;
 // mpu6050
 float count = 0;
 
 /* USER CODE END 0 */
 
 /**
- * @brief  The application entry point.
- * @retval int
- */
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -191,7 +191,7 @@ int main(void)
   float accZ_raw, accY_raw, accZ_rot;
   float Z_velocity = 0.0f, Z_velgap = 0.0f, Z_stack = 0.0f, Z_velmean = 0.0f;
   // ?���?? ?��?�� ?��?�� (LPF?? HPF ?��?��)
-  float alpha = 0.04f, beta = 0.96f;            // HPF ?��?��  LPF ?��?�� https://blog.naver.com/intheglass14/222777512235
+  float alpha = 0.004f, beta = 0.996f;            // HPF ?��?��  LPF ?��?�� https://blog.naver.com/intheglass14/222777512235
   float gyroAngleX = 0.0f, gyroAngleY = 0.0f;   // ?��?���?? ?��?���?? 추정?�� 각도
   float accelAngleX = 0.0f, accelAngleY = 0.0f; // �???��?�� ?��?���?? 추정?�� 각도
   float compAngleX = 0.0f, compAngleY = 0.0f;   // ?���?? ?��?���?? ?��?�� 추정?�� 각도
@@ -239,8 +239,6 @@ int main(void)
     // mpu6050 part
     MPU6050_Get_Accel_Scale(&myAccelScaled);
     MPU6050_Get_Gyro_Scale(&myGyroScaled);
-    // MPU6050_Get_Gyro_RawData(&myAccelRaw);
-    MPU6050_Get_Accel_RawData(&myAccelRaw);
 //    printf("Accel: X=%.2f, Y=%.2f, Z=%.2f\n ", myAccelScaled.x, myAccelScaled.y, myAccelScaled.z);
 //    HAL_Delay(50);
 //    printf("Accelraw: X=%.2f, Y=%.2f, Z=%.2f\n ", myAccelRaw.x, myAccelRaw.y, myAccelRaw.z);
@@ -250,27 +248,33 @@ int main(void)
     // mpu6050 part
 
     // Variables = Rocekt_Angle, altitude, Z_velocity(Arr_velocity),elapsedSeconds (?��?���???��?�� �???��)
-    if (start == 0 || Z_velocity >= 5)
+    /*if (start == 0 || Z_velocity >= 5)
     {
       Parachute = 1;
       start = 1;
 
       printf("Start deploying parachute system\r\n");
     }
-
-    if (Parachute == 1)
+*/
+    if (Parachute == 0)  // set 1
     {
-      // deploy Parachute part^^7 https://yjhtpi.tistory.com/352
-      accelAngleX = atan2f(myAccelScaled.y, sqrtf(myAccelScaled.x * myAccelScaled.x + myAccelScaled.z * myAccelScaled.z)) * RAD_TO_DEG;
-      accelAngleY = atan2f(-myAccelScaled.x, sqrtf(myAccelScaled.y * myAccelScaled.y + myAccelScaled.z * myAccelScaled.z)) * RAD_TO_DEG;
-      // ?��?���?? ?��?���?? ?��?��?�� 각도 추정 (?���?? ?��?���?? ?��?��?���?? ?��)
-      gyroAngleX += myGyroScaled.x * dt;
+      // deploy Parachute part^^7 https://yjhtpi.tistory.com/352 //https://blog.naver.com/intheglass14/222777512235 MPU6050 ?��보필?�� �???�� 블로�?? �??
+      accelAngleX = atan2f(myAccelScaled.y, sqrtf(myAccelScaled.x * myAccelScaled.x + myAccelScaled.z * myAccelScaled.z)); //RAD
+      accelAngleY = atan2f(-myAccelScaled.x, sqrtf(myAccelScaled.y * myAccelScaled.y + myAccelScaled.z * myAccelScaled.z));
+
+      gyroAngleX += myGyroScaled.x * dt; //RAD
       gyroAngleY += myGyroScaled.y * dt;
-      // ?���?? ?��?���?? ?��?��?��?�� 각도 결합 //https://blog.naver.com/intheglass14/222777512235 MPU6050 ?��보필?�� �???�� 블로�?? �??
+      //printf("accAngleX: %.2f accAngleY: %.2f\n",accelAngleX*RAD_TO_DEG, accelAngleY*RAD_TO_DEG);
+//      HAL_Delay(50);
+     //printf("gyroAngleX: %.2f gyroAngleY: %.2f\n",gyroAngleX*RAD_TO_DEG, gyroAngleY*RAD_TO_DEG);
+      //HAL_Delay(50);
+
+      //HAL_Delay(50);
       compAngleX = beta * (compAngleX + gyroAngleX) + alpha * accelAngleX;
       compAngleY = beta * (compAngleY + gyroAngleY) + alpha * accelAngleY;
-      AngleX = compAngleX * DEG_TO_RAD;
-      AngleY = compAngleY * DEG_TO_RAD;
+      AngleX = compAngleX * RAD_TO_DEG;
+      AngleY = compAngleY * RAD_TO_DEG;
+      printf("AngleX: %.2f AngleY: %.2f\n",AngleX,AngleY);
       // Euler angle to vector https://stackoverflow.com/questions/1568568/how-to-convert-euler-angles-to-directional-vector
       Rocket_vector[0] = cos(AngleX) * cos(AngleY);
       Rocket_vector[1] = sin(AngleX) * cos(AngleY);
@@ -280,15 +284,15 @@ int main(void)
       c = sqrt(Z_unitvector[0] * Z_unitvector[0] + Z_unitvector[1] * Z_unitvector[1] + Z_unitvector[2] * Z_unitvector[2]);
       // final Rocket Angle; Z 축에?�� ?��마나 벗어?��?���?? 계산
       Rocket_Angle = acos(a / (b * c)) * RAD_TO_DEG;
-      printf("Rocket Angle: %.2f\r\n", Rocket_Angle); // test code
-      HAL_Delay(500);
+      /*printf("Rocket Angle: %.2f\r\n", Rocket_Angle); // test code
+      HAL_Delay(500);*/
       // �???��?���?? ?��?��?���?? 방향?�� ?��?�� ?��?��?��켜서 중력 �???��?�� ?���??
       accZ_raw = myAccelScaled.y * cos(AngleX) - myAccelScaled.z * sin(AngleX); // z y
       accY_raw = myAccelScaled.z * cos(AngleX) + myAccelScaled.y * sin(AngleX); // y z
       // �???��?���?? ?��?��?���?? 방향?�� ?��?�� ?��?��?��켜서 중력 �???��?�� ?���??
       accZ_rot = -accZ_raw * sin(AngleY) + accY_raw * cos(AngleY);
-      printf("pure Z acc : %.2f\r\n", accZ_rot); // test code
-      HAL_Delay(500);
+      /*printf("pure Z acc : %.2f\r\n", accZ_rot); // test code
+      HAL_Delay(500);*/
       // velocity part
       Z_stack -= Z_velocity;             // delete pre-prev vel
       Z_velocity += accZ_rot * dt;       // calc Zvelocity
@@ -296,31 +300,18 @@ int main(void)
       Z_velmean = Z_stack / 2;           // mean of prev and
       Z_velgap = Z_velocity - Z_velmean; //
       // velocity part
-    }
-
-    // Variables = Rocekt_Angle, altitude, Z_velocity(Arr_velocity),elapsedSeconds (?��?���???��?�� �???��)
-    if (Z_velocity >= 5 || start == 0)
-    {
-      Parachute = 1;
-      start = 1;
-      // startTime = HAL_GetTick(); // ?��?�� ?��간을 초로 �???��?��
-      printf("Start deploying parachute system\r\n");
-    }
-
-    if (Parachute == 1)
-    {
       //printf("elapsed time: %lu\r\n", elapsed_time_ms);
-      if (altitude >= 380)
+      /*if (altitude >= 380)
       {
-        Parachute = 0;
-        printf("deploy parachute: altitude\r\n");
-        HAL_Delay(10);
+    	  Parachute = 0;
+    	  printf("deploy parachute: altitude\r\n");
+    	  HAL_Delay(10);
       }
       if (Rocket_Angle >= desiredAngle)
       {
-        Parachute = 0;
-        printf("deploy parachute: Desired Angle\r\n");
-        HAL_Delay(10);
+    	  Parachute = 0;
+    	  printf("deploy parachute: Desired Angle\r\n");
+    	  HAL_Delay(10);
       }
       // if (Z_velgap <= 0.1f)
       // {
@@ -328,11 +319,11 @@ int main(void)
       //   printf("deploy parachute : Z velocity");
       // }
       /*if (elapsed_time_ms >= 5000) // 10 s
-      {
-        Parachute = 0;
-        printf("deploy parachute : time out\r\n");
-        HAL_Delay(10);
-      }*/
+            {
+              Parachute = 0;
+              printf("deploy parachute : time out\r\n");
+              HAL_Delay(10);
+            }*/
     }
     // deploy Parachute part^^7
     // sdcard part
@@ -366,17 +357,17 @@ int main(void)
 }
 
 /**
- * @brief System Clock Configuration
- * @retval None
- */
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
-   * in the RCC_OscInitTypeDef structure.
-   */
+  * in the RCC_OscInitTypeDef structure.
+  */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -389,8 +380,9 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -403,10 +395,10 @@ void SystemClock_Config(void)
 }
 
 /**
- * @brief I2C1 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_I2C1_Init(void)
 {
 
@@ -433,13 +425,14 @@ static void MX_I2C1_Init(void)
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
+
 }
 
 /**
- * @brief I2C2 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief I2C2 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_I2C2_Init(void)
 {
 
@@ -466,13 +459,14 @@ static void MX_I2C2_Init(void)
   /* USER CODE BEGIN I2C2_Init 2 */
 
   /* USER CODE END I2C2_Init 2 */
+
 }
 
 /**
- * @brief SPI1 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief SPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_SPI1_Init(void)
 {
 
@@ -503,13 +497,14 @@ static void MX_SPI1_Init(void)
   /* USER CODE BEGIN SPI1_Init 2 */
 
   /* USER CODE END SPI1_Init 2 */
+
 }
 
 /**
- * @brief TIM2 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_TIM2_Init(void)
 {
 
@@ -561,13 +556,14 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 2 */
   HAL_TIM_MspPostInit(&htim2);
+
 }
 
 /**
- * @brief TIM3 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_TIM3_Init(void)
 {
 
@@ -619,13 +615,14 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 2 */
   HAL_TIM_MspPostInit(&htim3);
+
 }
 
 /**
- * @brief USART1 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_USART1_UART_Init(void)
 {
 
@@ -651,13 +648,14 @@ static void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 2 */
 
   /* USER CODE END USART1_Init 2 */
+
 }
 
 /**
- * @brief USART2 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_USART2_UART_Init(void)
 {
 
@@ -683,18 +681,19 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
+
 }
 
 /**
- * @brief GPIO Initialization Function
- * @param None
- * @retval None
- */
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
-  /* USER CODE END MX_GPIO_Init_1 */
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -722,8 +721,8 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-  /* USER CODE END MX_GPIO_Init_2 */
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
@@ -743,9 +742,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 /* USER CODE END 4 */
 
 /**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -757,14 +756,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef USE_FULL_ASSERT
+#ifdef  USE_FULL_ASSERT
 /**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */

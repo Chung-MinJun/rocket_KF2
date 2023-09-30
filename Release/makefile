@@ -38,34 +38,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := rocket
+BUILD_ARTIFACT_NAME := STMRocket
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-rocket.elf \
+STMRocket.elf \
 
 MAP_FILES += \
-rocket.map \
+STMRocket.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-rocket.list \
+STMRocket.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: rocket.elf secondary-outputs
+main-build: STMRocket.elf secondary-outputs
 
 # Tool invocations
-rocket.elf rocket.map: $(OBJS) $(USER_OBJS) C:\Users\myhom\STM32CubeIDE\workspace_1.13.0\rocket\STM32F103RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "rocket.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\myhom\STM32CubeIDE\workspace_1.13.0\rocket\STM32F103RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="rocket.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+STMRocket.elf STMRocket.map: $(OBJS) $(USER_OBJS) C:\Users\myhom\STM32CubeIDE\workspace_1.13.0\STMRocket\STM32F103RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "STMRocket.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\myhom\STM32CubeIDE\workspace_1.13.0\STMRocket\STM32F103RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="STMRocket.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -74,14 +74,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-rocket.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "rocket.list"
+STMRocket.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "STMRocket.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) default.size.stdout rocket.elf rocket.list rocket.map
+	-$(RM) STMRocket.elf STMRocket.list STMRocket.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
