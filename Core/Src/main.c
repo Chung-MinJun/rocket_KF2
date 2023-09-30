@@ -264,9 +264,9 @@ int main(void)
 
       gyroAngleX += myGyroScaled.x * dt; //RAD
       gyroAngleY += myGyroScaled.y * dt;
-      //printf("accAngleX: %.2f accAngleY: %.2f\n",accelAngleX*RAD_TO_DEG, accelAngleY*RAD_TO_DEG);
+      printf("accAngleX: %.2f accAngleY: %.2f\n",accelAngleX*RAD_TO_DEG, accelAngleY*RAD_TO_DEG);
 //      HAL_Delay(50);
-     //printf("gyroAngleX: %.2f gyroAngleY: %.2f\n",gyroAngleX*RAD_TO_DEG, gyroAngleY*RAD_TO_DEG);
+      printf("gyroAngleX: %.2f gyroAngleY: %.2f\n",gyroAngleX*RAD_TO_DEG, gyroAngleY*RAD_TO_DEG);
       //HAL_Delay(50);
 
       //HAL_Delay(50);
@@ -274,7 +274,7 @@ int main(void)
       compAngleY = beta * (compAngleY + gyroAngleY) + alpha * accelAngleY;
       AngleX = compAngleX * RAD_TO_DEG;
       AngleY = compAngleY * RAD_TO_DEG;
-      printf("AngleX: %.2f AngleY: %.2f\n",AngleX,AngleY);
+//      printf("AngleX: %.2f AngleY: %.2f\n",AngleX,AngleY);
       // Euler angle to vector https://stackoverflow.com/questions/1568568/how-to-convert-euler-angles-to-directional-vector
       Rocket_vector[0] = cos(AngleX) * cos(AngleY);
       Rocket_vector[1] = sin(AngleX) * cos(AngleY);
