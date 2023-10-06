@@ -191,7 +191,7 @@ int main(void)
   float accZ_raw, accY_raw, accZ_rot;
   float Z_velocity = 0.0f, Z_velgap = 0.0f, Z_stack = 0.0f, Z_velmean = 0.0f;
   // ?���?? ?��?�� ?��?�� (LPF?? HPF ?��?��)
-  float alpha = 0.004f, beta = 0.996f;            // HPF ?��?��  LPF ?��?�� https://blog.naver.com/intheglass14/222777512235
+  float alpha = 0.0004f, beta = 0.9996f;            // HPF ?��?��  LPF ?��?�� https://blog.naver.com/intheglass14/222777512235
   float gyroAngleX = 0.0f, gyroAngleY = 0.0f;   // ?��?���?? ?��?���?? 추정?�� 각도
   float accelAngleX = 0.0f, accelAngleY = 0.0f; // �???��?�� ?��?���?? 추정?�� 각도
   float compAngleX = 0.0f, compAngleY = 0.0f;   // ?���?? ?��?���?? ?��?�� 추정?�� 각도
@@ -259,33 +259,34 @@ int main(void)
     if (Parachute == 0)  // set 1
     {
       // deploy Parachute part^^7 https://yjhtpi.tistory.com/352 //https://blog.naver.com/intheglass14/222777512235 MPU6050 ?��보필?�� �???�� 블로�?? �??
-      accelAngleX = atan2f(myAccelScaled.y, sqrtf(myAccelScaled.x * myAccelScaled.x + myAccelScaled.z * myAccelScaled.z)); //RAD
+      accelAngleX = atan2f(myAccelScaled.y, sqrtf(myAccelScaled.x * myAccelScaled.x + myAccelScaled.z * myAccelScaled.z)); //RAD pitch and roll
       accelAngleY = atan2f(-myAccelScaled.x, sqrtf(myAccelScaled.y * myAccelScaled.y + myAccelScaled.z * myAccelScaled.z));
 
       gyroAngleX += myGyroScaled.x * dt; //RAD
       gyroAngleY += myGyroScaled.y * dt;
-      printf("accAngleX: %.2f accAngleY: %.2f\n",accelAngleX*RAD_TO_DEG, accelAngleY*RAD_TO_DEG);
+//      printf("accAngleX: %.2f accAngleY: %.2f\n",accelAngleX*RAD_TO_DEG, accelAngleY*RAD_TO_DEG);
 //      HAL_Delay(50);
-      printf("gyroAngleX: %.2f gyroAngleY: %.2f\n",gyroAngleX*RAD_TO_DEG, gyroAngleY*RAD_TO_DEG);
+//      printf("gyroAngleX: %.2f gyroAngleY: %.2f\n",gyroAngleX*RAD_TO_DEG, gyroAngleY*RAD_TO_DEG);
       //HAL_Delay(50);
 
       //HAL_Delay(50);
-      compAngleX = beta * (compAngleX + gyroAngleX) + alpha * accelAngleX;
-      compAngleY = beta * (compAngleY + gyroAngleY) + alpha * accelAngleY;
+      compAngleX = beta * gyroAngleX + alpha * accelAngleX;
+      compAngleY = beta * gyroAngleY + alpha * accelAngleY;
       AngleX = compAngleX * RAD_TO_DEG;
       AngleY = compAngleY * RAD_TO_DEG;
-//      printf("AngleX: %.2f AngleY: %.2f\n",AngleX,AngleY);
+//      printf("AngleX: %.2f AngleY: %.2f\n",AngleX,AngleY); its okay
       // Euler angle to vector https://stackoverflow.com/questions/1568568/how-to-convert-euler-angles-to-directional-vector
-      Rocket_vector[0] = cos(AngleX) * cos(AngleY);
-      Rocket_vector[1] = sin(AngleX) * cos(AngleY);
-      Rocket_vector[2] = sin(AngleY);
+      Rocket_vector[0] = -sin(compAngleX);
+      Rocket_vector[1] = sin(compAngleY) * cos(compAngleX);
+      Rocket_vector[2] = cos(compAngleY) * cos(compAngleX);
+      //printf("vec: %.2f  %.2f  %.2f \n",Rocket_vector[0],Rocket_vector[1],Rocket_vector[2]);
       a = Rocket_vector[0] * Z_unitvector[0] + Rocket_vector[1] * Z_unitvector[1] + Rocket_vector[2] * Z_unitvector[2];
       b = sqrt(Rocket_vector[0] * Rocket_vector[0] + Rocket_vector[1] * Rocket_vector[1] + Rocket_vector[2] * Rocket_vector[2]);
       c = sqrt(Z_unitvector[0] * Z_unitvector[0] + Z_unitvector[1] * Z_unitvector[1] + Z_unitvector[2] * Z_unitvector[2]);
       // final Rocket Angle; Z 축에?�� ?��마나 벗어?��?���?? 계산
       Rocket_Angle = acos(a / (b * c)) * RAD_TO_DEG;
-      /*printf("Rocket Angle: %.2f\r\n", Rocket_Angle); // test code
-      HAL_Delay(500);*/
+      printf("Rocket Angle: %.2f\r\n", Rocket_Angle); // test code
+      //HAL_Delay(500);
       // �???��?���?? ?��?��?���?? 방향?�� ?��?�� ?��?��?��켜서 중력 �???��?�� ?���??
       accZ_raw = myAccelScaled.y * cos(AngleX) - myAccelScaled.z * sin(AngleX); // z y
       accY_raw = myAccelScaled.z * cos(AngleX) + myAccelScaled.y * sin(AngleX); // y z
