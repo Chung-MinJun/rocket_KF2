@@ -226,12 +226,12 @@ int main(void)
 
 		accelAngleX = atan2f(myAccelScaled.y,
 				sqrtf(myAccelScaled.x * myAccelScaled.x
-								+ myAccelScaled.z * myAccelScaled.z)); 	// RAD pitch and roll
+								+ myAccelScaled.z * myAccelScaled.z)); 	// RAD pitch and roll by accerlate scope
 		accelAngleY = atan2f(-myAccelScaled.x,
 				sqrtf(myAccelScaled.y * myAccelScaled.y
 								+ myAccelScaled.z * myAccelScaled.z));
 
-		gyroAngleX += myGyroScaled.x * dt; 								// RAD
+		gyroAngleX += myGyroScaled.x * dt; 								// RAD by gyro scope
 		gyroAngleY += myGyroScaled.y * dt;
 		//printf("accAngleX: %.2f accAngleY: %.2f\n",accelAngleX*RAD_TO_DEG, accelAngleY*RAD_TO_DEG);
 		//HAL_Delay(50);
@@ -241,7 +241,7 @@ int main(void)
 		compAngleX = ALPHA * gyroAngleX + (1.0 - ALPHA) * accelAngleX;
 		compAngleY = ALPHA * gyroAngleY + (1.0 - ALPHA) * accelAngleY;
 
-		Rocket_vector[0] = -sin(compAngleX);           					// Euler angle to vector
+		Rocket_vector[0] = -sin(compAngleX);           					// Euler angle to vector (incorrect)
 		Rocket_vector[1] = sin(compAngleY) * cos(compAngleX); 			// https://stackoverflow.com/questions/1568568/how-to-convert-euler-angles-to-directional-vector
 		Rocket_vector[2] = cos(compAngleY) * cos(compAngleX);
 		// printf("vec: %.2f  %.2f  %.2f \n",Rocket_vector[0],Rocket_vector[1],Rocket_vector[2]);
@@ -254,15 +254,15 @@ int main(void)
 		c = sqrt(Z_unitvector[0] * Z_unitvector[0]
 						+ Z_unitvector[1] * Z_unitvector[1]
 						+ Z_unitvector[2] * Z_unitvector[2]);
-		// final Rocket Angle; Z 축에?�� ?��마나 벗어?��?���?? 계산
-		Rocket_Angle = acos(a / (b * c)) * RAD_TO_DEG;
-		printf("Rocket Angle: %.2f\r\n", Rocket_Angle); 					// test code
+		
+		Rocket_Angle = acos(a / (b * c)) * RAD_TO_DEG;                            // inner product(dot product) Rocket vector with Z unit vector
+		printf("Rocket Angle: %.2f\r\n", Rocket_Angle); 					                // test code
 
-		/*accZ_raw = myAccelScaled.y * cos(compAngleX)
-				- myAccelScaled.z * sin(compAngleX); 						// z y
-		accY_raw = myAccelScaled.z * cos(compAngleX)
-				+ myAccelScaled.y * sin(compAngleX); 						// y z
-				// �???��?���?? ?��?��?���?? 방향?�� ?��?�� ?��?��?��켜서 중력 �???��?�� ?���??
+		/*accZ_raw = myAccelScaled.z * cos(compAngleX)      // remove gravity to accel data
+				- myAccelScaled.y * sin(compAngleX); 						// z y
+		accY_raw = myAccelScaled.y * cos(compAngleX)
+				+ myAccelScaled.z * sin(compAngleX); 						// y z
+
 		accZ_rot = -accZ_raw * sin(compAngleY) + accY_raw * cos(compAngleY);
 		//printf("pure Z acc : %.2f\r\n", accZ_rot); 						// test code not pass
 
