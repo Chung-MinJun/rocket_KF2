@@ -227,13 +227,14 @@ int main(void)
 		accelAngleX = atan2f(myAccelScaled.y,
 				sqrtf(myAccelScaled.x * myAccelScaled.x
 								+ myAccelScaled.z * myAccelScaled.z)); 	// RAD pitch and roll by accerlate scope
-		accelAngleY = atan2f(-myAccelScaled.x,
+		accelAngleY = atan2f(-myAccelScaled.x, //-myacc.x to myacc.x
 				sqrtf(myAccelScaled.y * myAccelScaled.y
 								+ myAccelScaled.z * myAccelScaled.z));
 
 		gyroAngleX += myGyroScaled.x * dt; 								// RAD by gyro scope
 		gyroAngleY += myGyroScaled.y * dt;
-		//printf("accAngleX: %.2f accAngleY: %.2f\n",accelAngleX*RAD_TO_DEG, accelAngleY*RAD_TO_DEG);
+		gyroAngleZ += myGyroScaled.z * dt;
+		printf("accAngleX: %.2f accAngleY: %.2f\n",accelAngleX*RAD_TO_DEG, accelAngleY*RAD_TO_DEG);
 		//HAL_Delay(50);
 		//printf("gyroAngleX: %.2f gyroAngleY: %.2f\n",gyroAngleX*RAD_TO_DEG, gyroAngleY*RAD_TO_DEG);
 		// HAL_Delay(50);
@@ -256,21 +257,21 @@ int main(void)
 						+ Z_unitvector[2] * Z_unitvector[2]);
 		
 		Rocket_Angle = acos(a / (b * c)) * RAD_TO_DEG;                            // inner product(dot product) Rocket vector with Z unit vector
-		printf("Rocket Angle: %.2f\r\n", Rocket_Angle); 					                // test code
+//		printf("Rocket Angle: %.2f\r\n", Rocket_Angle); 					                // test code
 
-		/*accZ_raw = myAccelScaled.z * cos(compAngleX)      // remove gravity to accel data
+		float accZ_raw = myAccelScaled.z * cos(compAngleX)      // remove gravity to accel data
 				- myAccelScaled.y * sin(compAngleX); 						// z y
-		accY_raw = myAccelScaled.y * cos(compAngleX)
+		float accY_raw = myAccelScaled.y * cos(compAngleX)
 				+ myAccelScaled.z * sin(compAngleX); 						// y z
 
-		accZ_rot = -accZ_raw * sin(compAngleY) + accY_raw * cos(compAngleY);
-		//printf("pure Z acc : %.2f\r\n", accZ_rot); 						// test code not pass
+		float accZ_rot = -accZ_raw * sin(compAngleY) + accY_raw * cos(compAngleY);
+//		printf("pure Z acc : %.2f\r\n", accZ_rot); 						// test code not pass
 
 		Z_stack -= Z_velocity;             								// delete pre-prev vel
 		Z_velocity += accZ_rot * dt;       								// calc Zvelocity
 		Z_stack += Z_velocity;             								// add updated vel
 		Z_velmean = Z_stack / 2;           								// mean of prev and
-		Z_velgap = Z_velocity - Z_velmean;*/
+		Z_velgap = Z_velocity - Z_velmean;
 
 		// deploy parachute part
 		if (Parachute == 0)                           					// == 1 ( 0 is just test )
@@ -306,7 +307,12 @@ int main(void)
 			fresult = f_write(&fil, buffer, strlen(buffer), &bw); // Write the string to file
 			f_sync(&fil);                    // Ensure data is written and saved
 		}
+		endTick = SysTick->VAL;             	// tic (check loop time)
+		// SysTick은 다운 카운터이므로 startTick > endTick
+		elapsedTicks = startTick > endTick ? startTick - endTick : startTick + (0xFFFFFF - endTick);
+		costTime_us = (elapsedTicks * 8) / (64000000 / 1000000);
 
+//		printf("Time taken: %lu microseconds\n", costTime_us);
 		// sdcard part
 	}
 	// sdcard part
