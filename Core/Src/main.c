@@ -40,7 +40,8 @@
 #define RAD_TO_DEG 57.29578
 #define DEG_TO_RAD 0.017453
 #define ALPHA 0.9996                          // Complementary Filter alpha value
-#define dt 0.00078                            // check while loop time
+#define dt 0.00069
+// check while loop time
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -76,6 +77,12 @@ float Rocket_Angle = 0.0f;    					// result of dot product Rocket Vector with Z
 float a, b, c = 0.0f;                         	// just acos variables
 
 uint32_t startTick, endTick, elapsedTicks, costTime_us; //just check while loop time
+//---remove gravi ty  sisdfksfoij
+/*est_state_x[1][0][0] : acc
+est_state_x[1][1][0] : vel
+est_state_x[1][2][0] : position */
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -189,6 +196,25 @@ int main(void)
 	/* Open file to write/ create a file if it doesn't exist */
 	fresult = f_open(&fil, "file1.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
 	/* Writing text */
+	float est_state_x[1][2][0] = {0.0f};
+	float est_state_y[1][2][0] = {0.0f};
+	float est_state_z[1][2][0] = {0.0f};
+	float gravity_x = 0.0f;
+	float gravity_y = 0.0f;
+	float gravity_z = 0.0f;
+	float gravity_const = 9.81f;
+	//define lambda
+	float lambda = 0.0f;
+	float est_state_rho_x[1][1][0] = {0.0f};
+	float est_state_pi_y[1][1][0] = {0.0f};
+	float est_state_thea_z[1][1][0] = {0.0f};
+	MPU6050_Get_Gyro_Scale(&myGyroScaled);
+	est_state_rho_x[0][0][0] = myGyroScaled.x;     							//changed Gyro data
+	//est_cov_rho_x[0][0][0] = R_mat_gyro[0][0];
+	est_state_pi_y[0][0][0] = myGyroScaled.y;
+	//est_cov_pi_y[0][0][0] = R_mat_gyro[0][0];
+	est_state_thea_z[0][0][0] = myGyroScaled.z;
+	//est_cov_thea_z[0][0][0] = R_mat_gyro[0][0];
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -208,8 +234,8 @@ int main(void)
 		// mpu6050 part
 		MPU6050_Get_Accel_Scale(&myAccelScaled);
 		MPU6050_Get_Gyro_Scale(&myGyroScaled);
-		//    printf("Accel: X=%.2f, Y=%.2f, Z=%.2f\n ", myAccelScaled.x, myAccelScaled.y, myAccelScaled.z);
-		//    HAL_Delay(50);
+		//printf("Accel: X=%.2f, Y=%.2f, Z=%.2f\n ", myAccelScaled.x, myAccelScaled.y, myAccelScaled.z);
+		//HAL_Delay(50);
 		//    printf("Accelraw: X=%.2f, Y=%.2f, Z=%.2f\n ", myAccelRaw.x, myAccelRaw.y, myAccelRaw.z);
 		//    HAL_Delay(50);
 		//    printf("Gyro: X=%.2f, Y=%.2f, Z=%.2f\r\n", myGyroScaled.x, myGyroScaled.y, myGyroScaled.z);
@@ -223,6 +249,46 @@ int main(void)
 		 start = 1;
 		 printf("Start deploying parachute system\r\n");
 		 } */
+		//----------------------------------------- eliminate gravity oh ya
+
+		est_state_rho_x[1][0][0] = myGyroScaled.x;     							//changed Gyro data
+		//est_cov_rho_x[0][0][0] = R_mat_gyro[0][0];
+		est_state_pi_y[1][0][0] = myGyroScaled.y;
+		//est_cov_pi_y[0][0][0] = R_mat_gyro[0][0];
+		est_state_thea_z[1][0][0] = myGyroScaled.z;
+		//est_cov_thea_z[0][0][0] = R_mat_gyro[0][0];
+		est_state_rho_x[1][1][0] = dt*est_state_rho_x[1][0][0];
+		est_state_pi_y[1][1][0] = dt*est_state_pi_y[1][0][0];
+		est_state_thea_z[1][1][0] = dt*est_state_thea_z[1][0][0];
+
+		//calculate acc comp by gravity
+		if (est_state_thea_z[1][1][0]>(M_PI / 4)) {
+			//calc with sine    /use rho and thea
+			lambda = (float)atan(tan((double)est_state_rho_x[1][1][0])/sin((double)est_state_thea_z[1][1][0]));
+		}
+		else {
+			//calc with cosine  /use pi and thea
+			lambda = (float)atan(tan((double)est_state_pi_y[1][1][0]) / cos((double)est_state_thea_z[1][1][0]));
+		}
+
+		//with lambda, we should calculate gravity comp of each axis.
+		//gravity = 9.81m/s^2
+		gravity_x = gravity_const * sin((double)lambda) * cos((double)est_state_thea_z[1][1][0]);
+		gravity_y = gravity_const * sin((double)lambda) * sin((double)est_state_thea_z[1][1][0]);
+		gravity_z = gravity_const * cos((double)lambda);
+
+		//store acc to matrix
+		est_state_x[1][0][0] = myAccelScaled.x-gravity_x;
+		est_state_y[1][0][0] = myAccelScaled.y-gravity_y;
+		est_state_z[1][0][0] = myAccelScaled.z-gravity_z;
+		//vel
+		est_state_x[1][1][0] = est_state_x[0][1][0] + dt*est_state_x[0][0][0];
+		est_state_y[1][1][0] = est_state_y[0][1][0] + dt*est_state_y[0][0][0];
+		est_state_z[1][1][0] = est_state_z[0][1][0] + dt*est_state_z[0][0][0];
+		//pos
+		est_state_x[1][2][0] = est_state_x[0][2][0] + dt*est_state_x[0][1][0] + 0.5*dt*dt*est_state_x[0][0][0];
+		est_state_y[1][2][0] = est_state_y[0][2][0] + dt*est_state_y[0][1][0] + 0.5*dt*dt*est_state_y[0][0][0];
+		est_state_z[1][2][0] = est_state_z[0][2][0] + dt*est_state_z[0][1][0] + 0.5*dt*dt*est_state_z[0][0][0];
 
 		accelAngleX = atan2f(myAccelScaled.y,
 				sqrtf(myAccelScaled.x * myAccelScaled.x
@@ -233,8 +299,8 @@ int main(void)
 
 		gyroAngleX += myGyroScaled.x * dt; 								// RAD by gyro scope
 		gyroAngleY += myGyroScaled.y * dt;
-		gyroAngleZ += myGyroScaled.z * dt;
-		printf("accAngleX: %.2f accAngleY: %.2f\n",accelAngleX*RAD_TO_DEG, accelAngleY*RAD_TO_DEG);
+//		gyroAngleZ += myGyroScaled.z * dt;
+//		printf("accAngleX: %.2f accAngleY: %.2f\n",accelAngleX*RAD_TO_DEG, accelAngleY*RAD_TO_DEG);
 		//HAL_Delay(50);
 		//printf("gyroAngleX: %.2f gyroAngleY: %.2f\n",gyroAngleX*RAD_TO_DEG, gyroAngleY*RAD_TO_DEG);
 		// HAL_Delay(50);
@@ -259,19 +325,16 @@ int main(void)
 		Rocket_Angle = acos(a / (b * c)) * RAD_TO_DEG;                            // inner product(dot product) Rocket vector with Z unit vector
 //		printf("Rocket Angle: %.2f\r\n", Rocket_Angle); 					                // test code
 
-		float accZ_raw = myAccelScaled.z * cos(compAngleX)      // remove gravity to accel data
-				- myAccelScaled.y * sin(compAngleX); 						// z y
-		float accY_raw = myAccelScaled.y * cos(compAngleX)
-				+ myAccelScaled.z * sin(compAngleX); 						// y z
+//		float accZ_raw = myAccelScaled.z * cos(compAngleX)      // remove gravity to accel data
+//				- myAccelScaled.y * sin(compAngleX); 						// z y
+//		float accY_raw = myAccelScaled.y * cos(compAngleX)
+//				+ myAccelScaled.z * sin(compAngleX); 						// y z
+//
+//		float accZ_rot = -accZ_raw * sin(compAngleY) + accY_raw * cos(compAngleY);
+////		printf("pure Z acc : %.2f\r\n", accZ_rot); 						// test code not pass
+//
 
-		float accZ_rot = -accZ_raw * sin(compAngleY) + accY_raw * cos(compAngleY);
-//		printf("pure Z acc : %.2f\r\n", accZ_rot); 						// test code not pass
 
-		Z_stack -= Z_velocity;             								// delete pre-prev vel
-		Z_velocity += accZ_rot * dt;       								// calc Zvelocity
-		Z_stack += Z_velocity;             								// add updated vel
-		Z_velmean = Z_stack / 2;           								// mean of prev and
-		Z_velgap = Z_velocity - Z_velmean;
 
 		// deploy parachute part
 		if (Parachute == 0)                           					// == 1 ( 0 is just test )
@@ -307,12 +370,37 @@ int main(void)
 			fresult = f_write(&fil, buffer, strlen(buffer), &bw); // Write the string to file
 			f_sync(&fil);                    // Ensure data is written and saved
 		}
+
+		//renewal
+		est_state_x[0][0][0] = est_state_x[1][0][0];
+		est_state_x[0][1][0] = est_state_x[1][1][0];
+		est_state_x[0][2][0] = est_state_x[1][2][0];
+		est_state_y[0][0][0] = est_state_y[1][0][0];
+		est_state_y[0][1][0] = est_state_y[1][1][0];
+		est_state_y[0][2][0] = est_state_y[1][2][0];
+		est_state_z[0][0][0] = est_state_z[1][0][0];
+		est_state_z[0][1][0] = est_state_z[1][1][0];
+		est_state_z[0][2][0] = est_state_z[1][2][0];
+
+		est_state_rho_x[0][0][0] = est_state_rho_x[1][0][0];
+		est_state_rho_x[0][1][0] = est_state_rho_x[1][1][0];
+
 		endTick = SysTick->VAL;             	// tic (check loop time)
 		// SysTick은 다운 카운터이므로 startTick > endTick
 		elapsedTicks = startTick > endTick ? startTick - endTick : startTick + (0xFFFFFF - endTick);
 		costTime_us = (elapsedTicks * 8) / (64000000 / 1000000);
 
-//		printf("Time taken: %lu microseconds\n", costTime_us);
+		printf("Time taken: %lu microseconds\n", costTime_us);
+		/*printf("x: %.2f  %.2f  %.2f, y: %.2f  %.2f  %.2f, z: %.2f  %.2f  %.2f\r\n ",est_state_x[0][0][0],
+				est_state_x[0][1][0],
+				est_state_x[0][2][0],
+				est_state_y[0][0][0],
+				est_state_y[0][1][0],
+				est_state_y[0][2][0],
+				est_state_z[0][0][0],
+				est_state_z[0][1][0],
+				est_state_z[0][2][0]);*/
+		HAL_Delay(100);
 		// sdcard part
 	}
 	// sdcard part
