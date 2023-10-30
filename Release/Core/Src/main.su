@@ -1,7 +1,9 @@
-../Core/Src/main.c:98:1:__io_putchar	16	static
-../Core/Src/main.c:427:6:SystemClock_Config	72	static,ignoring_inline_asm
-../Core/Src/main.c:793:6:HAL_TIM_PeriodElapsedCallback	0	static
-../Core/Src/main.c:804:6:SysTick_Init	0	static
-../Core/Src/main.c:129:5:main	288	static,ignoring_inline_asm
-../Core/Src/main.c:812:6:SysTick_Delay_us	0	static
-../Core/Src/main.c:825:6:Error_Handler	0	static,ignoring_inline_asm
+../Core/Src/main.c:120:1:__io_putchar	16	static
+../Core/Src/main.c:323:6:SystemClock_Config	72	static,ignoring_inline_asm
+../Core/Src/main.c:689:6:HAL_TIM_PeriodElapsedCallback	0	static
+../Core/Src/main.c:700:6:SysTick_Init	0	static
+../Core/Src/main.c:708:6:SysTick_Delay_us	0	static
+../Core/Src/main.c:715:6:updateQuaternion	88	static
+../Core/Src/main.c:775:6:setInitialQuaternion	48	static
+../Core/Src/main.c:156:5:main	240	static,ignoring_inline_asm
+../Core/Src/main.c:794:6:Error_Handler	0	static,ignoring_inline_asm
