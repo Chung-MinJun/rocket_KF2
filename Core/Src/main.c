@@ -273,12 +273,12 @@ int main(void)
 																				 + z_Unitvector[2] * z_Unitvector[2]);
 
 		rocketAngle = acos(a / (b * c)) * RAD_TO_DEG;                            // inner product(dot product) Rocket vector with Z unit vector
-		 // 중력의 크기
+		 // Gravity Norm
 
-		// 로켓 방향과 중력 벡터의 내적 계산
+		// inner product 로켓 방향과 중력 벡터의 내적 계산
 		gravityComponentAlongRocket = (rocketVector[0] * vectorG[0] + rocketVector[1] * vectorG[1] + rocketVector[2] * vectorG[2]) * gravityMagnitude;
 
-		// 각 축에 대한 중력 성분 계산
+		// comp Gravity to rocket axis 각 축에 대한 중력 성분 계산
 		gravityComponentOnX = rocketVector[0] * gravityComponentAlongRocket;
 		gravityComponentOnY = rocketVector[1] * gravityComponentAlongRocket;
 		gravityComponentOnZ = rocketVector[2] * gravityComponentAlongRocket;
@@ -300,7 +300,7 @@ int main(void)
 				printf("desiredAngle30\r\n");
 				continue;
 			}
-			else if (seconds>10){
+			else if (second>10){
 				Parachute = 1;
 				printf("Timeout!\r\n");
 				continue;
