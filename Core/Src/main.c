@@ -44,6 +44,7 @@
 #define dt 0.00069                       	// check while loop time
 #define desiredAngle 30.0
 #define beta 0.006981
+#define gravityMagnitude 9.81
 //#define beta 0.1
 /* USER CODE END PD */
 
@@ -207,6 +208,10 @@ int main(void)
 	fresult = f_open(&fil, "file1.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
 	/* Writing text */
 
+	float realAccelX, realAccelY, realAccelZ;
+	float gravityComponentAlongRocket;
+	float gravityComponentOnX, gravityComponentOnY, gravityComponentOnZ;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -268,22 +273,39 @@ int main(void)
 																				 + z_Unitvector[2] * z_Unitvector[2]);
 
 		rocketAngle = acos(a / (b * c)) * RAD_TO_DEG;                            // inner product(dot product) Rocket vector with Z unit vector
-		float gravityMagnitude = 9.81f; // 중력의 크기
+		 // 중력의 크기
 
 		// 로켓 방향과 중력 벡터의 내적 계산
-		float gravityComponentAlongRocket = (rocketVector[0] * vectorG[0] + rocketVector[1] * vectorG[1] + rocketVector[2] * vectorG[2]) * gravityMagnitude;
+		gravityComponentAlongRocket = (rocketVector[0] * vectorG[0] + rocketVector[1] * vectorG[1] + rocketVector[2] * vectorG[2]) * gravityMagnitude;
 
 		// 각 축에 대한 중력 성분 계산
-		float gravityComponentOnX = rocketVector[0] * gravityComponentAlongRocket;
-		float gravityComponentOnY = rocketVector[1] * gravityComponentAlongRocket;
-		float gravityComponentOnZ = rocketVector[2] * gravityComponentAlongRocket;
-		myAccelScaled.x +=gravityComponentOnX;
-		myAccelScaled.y +=gravityComponentOnY;
-		myAccelScaled.z +=gravityComponentOnZ;
-		printf("%.2f %.2f %.2f\r\n",myAccelScaled.x,myAccelScaled.y,myAccelScaled.z);
+		gravityComponentOnX = rocketVector[0] * gravityComponentAlongRocket;
+		gravityComponentOnY = rocketVector[1] * gravityComponentAlongRocket;
+		gravityComponentOnZ = rocketVector[2] * gravityComponentAlongRocket;
+		realAccelX = myAccelScaled.x + gravityComponentOnX;
+		realAccelY = myAccelScaled.y + gravityComponentOnY;
+		realAccelZ = myAccelScaled.z + gravityComponentOnZ;
+		printf("%.2f %.2f %.2f\r\n",realAccelX,realAccelY,realAccelZ);
 
 //		printf("Rocket Angle: %.2f\r\n", rocketAngle);
 
+		if (Parachute==0){
+			if (altitude==370){
+				Parachute = 1;
+				printf("Altitude\r\n");
+				continue;
+			}
+			else if (rocketAngle>desiredAngle){
+				Parachute = 1;
+				printf("desiredAngle30\r\n");
+				continue;
+			}
+			else if (seconds>10){
+				Parachute = 1;
+				printf("Timeout!\r\n");
+				continue;
+			}
+		}
 
 
 
