@@ -226,6 +226,7 @@ int main(void)
 		altitude = readTrueAltitude(0);
 		MPU6050_Get_Accel_Scale(&myAccelScaled);
 		MPU6050_Get_Gyro_Scale(&myGyroScaled);
+    // set init state.
 		if(start==0&&myAccelScaled.z<=1.0f){
 			for(int count=0;count<3;count++){
 				accAverage.x=0,accAverage.y=0,accAverage.z=0;
@@ -253,7 +254,7 @@ int main(void)
 			start=1;
 		//Rocket launched
 //		startTick = SysTick->VAL;
-		//kalman filter
+		//kalman filter Part
 
 
 		updateQuaternion(myGyroScaled.x,myGyroScaled.y,myGyroScaled.z,myAccelScaled.x,myAccelScaled.y,myAccelScaled.z);
