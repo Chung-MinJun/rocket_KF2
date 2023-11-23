@@ -68,7 +68,7 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 float temp, press, altitude;
 int second = 0;
-
+float firstAltitude;
 int Parachute = 0;
 int start = 0;    				//Parachute states
 
@@ -86,6 +86,9 @@ int iter = 0;
 float prev_state[3]; 					// result of dot product Rocket Vector with Z-axis
 float a, b, c = 0.0f;                         	// just acos variables
 float SEq_1 = 1.0f, SEq_2 = 0.0f, SEq_3 = 0.0f, SEq_4 = 0.0f; // estimated orientation quaternion elements with initial conditions
+//float realAccelX, realAccelY, realAccelZ;
+//float gravityComponentAlongRocket;
+//float gravityComponentOnX, gravityComponentOnY, gravityComponentOnZ;
 
 /* USER CODE END PV */
 
@@ -148,6 +151,7 @@ typedef struct{
 }Quaternion;
 Quaternion q = {1,0,0,0};
 
+int timeout_start = 0;
 /* USER CODE END 0 */
 
 /**
@@ -208,9 +212,9 @@ int main(void)
 	fresult = f_open(&fil, "file1.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
 	/* Writing text */
 
-	float realAccelX, realAccelY, realAccelZ;
-	float gravityComponentAlongRocket;
-	float gravityComponentOnX, gravityComponentOnY, gravityComponentOnZ;
+
+
+
 
   /* USER CODE END 2 */
 
@@ -226,8 +230,15 @@ int main(void)
 		altitude = readTrueAltitude(0);
 		MPU6050_Get_Accel_Scale(&myAccelScaled);
 		MPU6050_Get_Gyro_Scale(&myGyroScaled);
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+		if(start==0&&myAccelScaled.z<=24.0f){
+=======
+>>>>>>> Stashed changes
     // set init state.
 		if(start==0&&myAccelScaled.z<=1.0f){
+>>>>>>> 3c3693736f86d048fccb21fa0d526dcd94f1e559
 			for(int count=0;count<3;count++){
 				accAverage.x=0,accAverage.y=0,accAverage.z=0;
 				accAverage.x=+myAccelScaled.x;
@@ -247,11 +258,16 @@ int main(void)
 			prev_state[1] = gyroAngleY;
 			prev_state[2]=0.0f;
 			setInitialQuaternion(prev_state[2], prev_state[1],prev_state[0]);
+			firstAltitude = altitude;			// update initial altitude
 
+			printf("%.2f\r\n",myAccelScaled.z);
+			HAL_Delay(10);
 			continue;		//start trigger
 		}
-		else
+		else{
+			timeout_start = 1;
 			start=1;
+		}
 		//Rocket launched
 //		startTick = SysTick->VAL;
 		//kalman filter Part
@@ -277,37 +293,39 @@ int main(void)
 		 // Gravity Norm
 
 		// inner product 로켓 방향과 중력 벡터의 내적 계산
-		gravityComponentAlongRocket = (rocketVector[0] * vectorG[0] + rocketVector[1] * vectorG[1] + rocketVector[2] * vectorG[2]) * gravityMagnitude;
+//		gravityComponentAlongRocket = (rocketVector[0] * vectorG[0] + rocketVector[1] * vectorG[1] + rocketVector[2] * vectorG[2]) * gravityMagnitude;
 
 		// comp Gravity to rocket axis 각 축에 대한 중력 성분 계산
-		gravityComponentOnX = rocketVector[0] * gravityComponentAlongRocket;
-		gravityComponentOnY = rocketVector[1] * gravityComponentAlongRocket;
-		gravityComponentOnZ = rocketVector[2] * gravityComponentAlongRocket;
-		realAccelX = myAccelScaled.x + gravityComponentOnX;
-		realAccelY = myAccelScaled.y + gravityComponentOnY;
-		realAccelZ = myAccelScaled.z + gravityComponentOnZ;
-		printf("%.2f %.2f %.2f\r\n",realAccelX,realAccelY,realAccelZ);
+//		gravityComponentOnX = rocketVector[0] * gravityComponentAlongRocket;
+//		gravityComponentOnY = rocketVector[1] * gravityComponentAlongRocket;
+//		gravityComponentOnZ = rocketVector[2] * gravityComponentAlongRocket;
+//		realAccelX = myAccelScaled.x + gravityComponentOnX;
+//		realAccelY = myAccelScaled.y + gravityComponentOnY;
+//		realAccelZ = myAccelScaled.z + gravityComponentOnZ;
+//		printf("%.2f %.2f %.2f\r\n",realAccelX,realAccelY,realAccelZ);
 
 //		printf("Rocket Angle: %.2f\r\n", rocketAngle);
-
+		printf(" is real \r\n");
 		if (Parachute==0){
-			if (altitude==370){
+			if (altitude-firstAltitude>=390){
 				Parachute = 1;
 				printf("Altitude\r\n");
+				__HAL_TIM_SetCompare(&htim2, TIM_CHANNEL_1, 125);					// deploy parachute
 				continue;
 			}
 			else if (rocketAngle>desiredAngle){
 				Parachute = 1;
 				printf("desiredAngle30\r\n");
+				__HAL_TIM_SetCompare(&htim2, TIM_CHANNEL_1, 125);					// deploy parachute
 				continue;
 			}
-			else if (second>10){
-				Parachute = 1;
-				printf("Timeout!\r\n");
-				continue;
-			}
+//			else if (second>10){
+//				Parachute = 1;
+//				printf("Timeout!\r\n");
+//
+//				continue;
+//			}
 		}
-
 
 
 
@@ -322,6 +340,10 @@ int main(void)
 			fresult = f_write(&fil, buffer, strlen(buffer), &bw); // Write the string to file
 			f_sync(&fil);                    // Ensure data is written and saved
 		}
+
+//		if (sqrt(myGyroScaled.x^2+myGyroScaled.y^2+myGyroScaled.z^2)){
+//
+//		}
 //		endTick = SysTick->VAL;             	// tic (check loop time)
 //		// SysTick은 다운 카운터이므로 startTick > endTick
 //		elapsedTicks = startTick > endTick ? startTick - endTick : startTick + (0xFFFFFF - endTick);
@@ -711,13 +733,17 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) // time out private function
 {
-	if (htim->Instance == TIM3) {
-		second++;
-		if (second == 5) {
-			//      printf("timeout ok\r\n");
-			second = 0;
-		}
-	}
+   if(timeout_start == 1)
+   {
+      if (htim->Instance == TIM3) {
+         second++;
+         if (second == 10) {
+//            printf("timeout ok\r\n");
+            __HAL_TIM_SetCompare(&htim2, TIM_CHANNEL_1, 125);					// deploy parachute
+            second = 0;
+         }
+      }
+   }
 }
 
 void SysTick_Init(void)                      // tic toc function - once of while
