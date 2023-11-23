@@ -230,15 +230,9 @@ int main(void)
 		altitude = readTrueAltitude(0);
 		MPU6050_Get_Accel_Scale(&myAccelScaled);
 		MPU6050_Get_Gyro_Scale(&myGyroScaled);
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-		if(start==0&&myAccelScaled.z<=24.0f){
-=======
->>>>>>> Stashed changes
+
     // set init state.
-		if(start==0&&myAccelScaled.z<=1.0f){
->>>>>>> 3c3693736f86d048fccb21fa0d526dcd94f1e559
+		if(start==0&&myAccelScaled.z<=24.0f){
 			for(int count=0;count<3;count++){
 				accAverage.x=0,accAverage.y=0,accAverage.z=0;
 				accAverage.x=+myAccelScaled.x;
@@ -333,9 +327,9 @@ int main(void)
 		char buffer[100]; // Buffer to hold string
 
 		sprintf(buffer,
-				"altitude: %.2f Gyro: X=%.2f Y=%.2f Z=%.2f Accel: X=%.2f Y=%.2f Z=%.2f\r\n",
+				"altitude: %.2f Gyro: X=%.2f Y=%.2f Z=%.2f Accel: X=%.2f Y=%.2f Z=%.2f Angle=%.2f\r\n",
 				altitude, myGyroScaled.x, myGyroScaled.y, myGyroScaled.z,
-				myAccelScaled.x, myAccelScaled.y, myAccelScaled.z);
+				myAccelScaled.x, myAccelScaled.y, myAccelScaled.z,rocketAngle);
 		if (fresult == FR_OK) {
 			fresult = f_write(&fil, buffer, strlen(buffer), &bw); // Write the string to file
 			f_sync(&fil);                    // Ensure data is written and saved
