@@ -42,7 +42,7 @@
 #define DEG_TO_RAD 0.017453
 #define ALPHA 0.96                          // Complementary Filter alpha value
 #define dt 0.00069                       	// check while loop time
-#define desiredAngle 30.0
+#define desiredAngle 45.0
 #define beta 0.006981
 #define gravityMagnitude 9.81
 //#define beta 0.1
@@ -71,7 +71,7 @@ int second = 0;
 float firstAltitude;
 int Parachute = 0;
 int start = 0;    				//Parachute states
-
+float finalAltitude;
 
 float gyroAngleX = 0.0f, gyroAngleY = 0.0f; 	// pitch(X) and roll(Y) angle (Euler Angle) by gyroscope
 float accelAngleX = 0.0f, accelAngleY = 0.0f; 	// pitch(X) and roll(Y) angle (Euler Angle) by AccelerateScope
@@ -86,6 +86,8 @@ int iter = 0;
 float prev_state[3]; 					// result of dot product Rocket Vector with Z-axis
 float a, b, c = 0.0f;                         	// just acos variables
 float SEq_1 = 1.0f, SEq_2 = 0.0f, SEq_3 = 0.0f, SEq_4 = 0.0f; // estimated orientation quaternion elements with initial conditions
+float roll, pitch, yaw;
+
 //float realAccelX, realAccelY, realAccelZ;
 //float gravityComponentAlongRocket;
 //float gravityComponentOnX, gravityComponentOnY, gravityComponentOnZ;
@@ -232,7 +234,7 @@ int main(void)
 		MPU6050_Get_Gyro_Scale(&myGyroScaled);
 
     // set init state.
-		if(start==0&&myAccelScaled.z<=24.0f){
+		if(start==0&&myAccelScaled.z<=20.0f){
 			for(int count=0;count<3;count++){
 				accAverage.x=0,accAverage.y=0,accAverage.z=0;
 				accAverage.x=+myAccelScaled.x;
@@ -254,8 +256,8 @@ int main(void)
 			setInitialQuaternion(prev_state[2], prev_state[1],prev_state[0]);
 			firstAltitude = altitude;			// update initial altitude
 
-			printf("%.2f\r\n",myAccelScaled.z);
-			HAL_Delay(10);
+//			printf("%.2f\r\n",myAccelScaled.z);
+//			HAL_Delay(10);
 			continue;		//start trigger
 		}
 		else{
@@ -284,22 +286,19 @@ int main(void)
 																				 + z_Unitvector[2] * z_Unitvector[2]);
 
 		rocketAngle = acos(a / (b * c)) * RAD_TO_DEG;                            // inner product(dot product) Rocket vector with Z unit vector
-		 // Gravity Norm
 
-		// inner product 로켓 방향과 중력 벡터의 내적 계산
-//		gravityComponentAlongRocket = (rocketVector[0] * vectorG[0] + rocketVector[1] * vectorG[1] + rocketVector[2] * vectorG[2]) * gravityMagnitude;
+		//Transfer Quaternion to Euler Angle
+		roll = atan2f(2.0f * (SEq_1 * SEq_2 + SEq_3 * SEq_4), 1.0f - 2.0f * (SEq_2 * SEq_2 + SEq_3 * SEq_3));
+		pitch = asinf(2.0f * (SEq_1 * SEq_3 - SEq_4 * SEq_2));
+		yaw = atan2f(2.0f * (SEq_1 * SEq_4 + SEq_2 * SEq_3), 1.0f - 2.0f * (SEq_3 * SEq_3 + SEq_4 * SEq_4));
 
-		// comp Gravity to rocket axis 각 축에 대한 중력 성분 계산
-//		gravityComponentOnX = rocketVector[0] * gravityComponentAlongRocket;
-//		gravityComponentOnY = rocketVector[1] * gravityComponentAlongRocket;
-//		gravityComponentOnZ = rocketVector[2] * gravityComponentAlongRocket;
-//		realAccelX = myAccelScaled.x + gravityComponentOnX;
-//		realAccelY = myAccelScaled.y + gravityComponentOnY;
-//		realAccelZ = myAccelScaled.z + gravityComponentOnZ;
-//		printf("%.2f %.2f %.2f\r\n",realAccelX,realAccelY,realAccelZ);
+		// 결과 출력
+//		printf("Roll: %.2f degrees\r\n", roll * RAD_TO_DEG);
+//		printf("Pitch: %.2f degrees\r\n", pitch * RAD_TO_DEG);
+//		printf("Yaw: %.2f degrees\r\n", yaw * RAD_TO_DEG);
+//		printf("%f",altitude-firstAltitude);
+//		printf(" is real \r\n");
 
-//		printf("Rocket Angle: %.2f\r\n", rocketAngle);
-		printf(" is real \r\n");
 		if (Parachute==0){
 			if (altitude-firstAltitude>=390){
 				Parachute = 1;
@@ -321,15 +320,15 @@ int main(void)
 //			}
 		}
 
-
+		finalAltitude = altitude-firstAltitude;
 
 		// sdcard part
 		char buffer[100]; // Buffer to hold string
-
+		//timeinfo = *localtime(&rawtime);
 		sprintf(buffer,
-				"altitude: %.2f Gyro: X=%.2f Y=%.2f Z=%.2f Accel: X=%.2f Y=%.2f Z=%.2f Angle=%.2f\r\n",
-				altitude, myGyroScaled.x, myGyroScaled.y, myGyroScaled.z,
-				myAccelScaled.x, myAccelScaled.y, myAccelScaled.z,rocketAngle);
+				"%.2f, %.2f ,%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n",
+				finalAltitude, myGyroScaled.x, myGyroScaled.y, myGyroScaled.z,
+				myAccelScaled.x, myAccelScaled.y, myAccelScaled.z,roll,pitch,yaw);	//Altitude GyroXYZ AccelXYZ roll pitch yaw time
 		if (fresult == FR_OK) {
 			fresult = f_write(&fil, buffer, strlen(buffer), &bw); // Write the string to file
 			f_sync(&fil);                    // Ensure data is written and saved
@@ -339,11 +338,13 @@ int main(void)
 //
 //		}
 //		endTick = SysTick->VAL;             	// tic (check loop time)
-//		// SysTick은 다운 카운터이므로 startTick > endTick
+////		// SysTick은 다운 카운터이므로 startTick > endTick
 //		elapsedTicks = startTick > endTick ? startTick - endTick : startTick + (0xFFFFFF - endTick);
-//		costTime_us = (elapsedTicks * 8) / (64000000 / 1000000);
+//		costTime_us = (elapsedTicks * 8) / (64000000 / 100000);
 
-		//		printf("Time taken: %lu microseconds\n", costTime_us);
+//		printf("Time taken: %lu microseconds\n", costTime_us);
+//		HAL_Delay(100);
+
 		// sdcard part
 	}
 	// sdcard part
@@ -351,7 +352,6 @@ int main(void)
 		fresult = f_close(&fil);
 	}
 	// sdcard part
-
   /* USER CODE END 3 */
 }
 
@@ -731,7 +731,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) // time out private 
    {
       if (htim->Instance == TIM3) {
          second++;
-         if (second == 10) {
+         if (second == 11) {
 //            printf("timeout ok\r\n");
             __HAL_TIM_SetCompare(&htim2, TIM_CHANNEL_1, 125);					// deploy parachute
             second = 0;
